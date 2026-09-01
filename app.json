@@ -14,7 +14,8 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.pedro215.autocar"
     },
     "web": {
       "output": "static",
