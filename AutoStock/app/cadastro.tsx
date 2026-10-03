@@ -80,6 +80,11 @@ export default function CadastroScreen() {
     setRepetirSenhaFocada,
   ] = useState(false);
 
+  const [
+    tecladoAberto,
+    setTecladoAberto,
+  ] = useState(false);
+
   const cadastroConcluidoRef =
     useRef(false);
 
@@ -131,6 +136,34 @@ export default function CadastroScreen() {
     usuarioCadastrado,
   ]);
 
+  useEffect(() => {
+    const mostrar =
+      Keyboard.addListener(
+        'keyboardDidShow',
+        () => {
+          setTecladoAberto(
+            true
+          );
+        }
+      );
+
+    const esconder =
+      Keyboard.addListener(
+        'keyboardDidHide',
+        () => {
+          setTecladoAberto(
+            false
+          );
+        }
+      );
+
+    return () => {
+      mostrar.remove();
+
+      esconder.remove();
+    };
+  }, []);
+
   function emailValido(
     texto: string
   ) {
@@ -139,12 +172,15 @@ export default function CadastroScreen() {
     );
   }
 
-  function rolarParaBaixo() {
+  function acompanharCampo(
+    posicao: number
+  ) {
     setTimeout(() => {
-      scrollRef.current?.scrollToEnd({
+      scrollRef.current?.scrollTo({
+        y: posicao,
         animated: true,
       });
-    }, 180);
+    }, 250);
   }
 
   async function cadastrar() {
@@ -220,7 +256,7 @@ export default function CadastroScreen() {
                 () => {
                   senhaRef.current?.focus();
 
-                  rolarParaBaixo();
+                  acompanharCampo(175);
                 },
                 150
               );
@@ -367,10 +403,13 @@ export default function CadastroScreen() {
           Platform.OS ===
           'ios'
             ? 'padding'
-            : undefined
+            : 'height'
         }
         keyboardVerticalOffset={
-          0
+          Platform.OS ===
+          'ios'
+            ? 20
+            : 0
         }
       >
         <ScrollView
@@ -378,9 +417,12 @@ export default function CadastroScreen() {
           style={
             styles.scroll
           }
-          contentContainerStyle={
-            styles.content
-          }
+          contentContainerStyle={[
+            styles.content,
+
+            tecladoAberto &&
+              styles.contentTeclado,
+          ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={
@@ -452,6 +494,9 @@ export default function CadastroScreen() {
             autoCapitalize="words"
             returnKeyType="next"
             submitBehavior="submit"
+            onFocus={() => {
+              acompanharCampo(0);
+            }}
             onSubmitEditing={() => {
               sobrenomeRef.current?.focus();
             }}
@@ -475,6 +520,9 @@ export default function CadastroScreen() {
             autoCapitalize="words"
             returnKeyType="next"
             submitBehavior="submit"
+            onFocus={() => {
+              acompanharCampo(45);
+            }}
             onSubmitEditing={() => {
               emailRef.current?.focus();
             }}
@@ -498,10 +546,11 @@ export default function CadastroScreen() {
             }
             returnKeyType="next"
             submitBehavior="submit"
+            onFocus={() => {
+              acompanharCampo(110);
+            }}
             onSubmitEditing={() => {
               senhaRef.current?.focus();
-
-              rolarParaBaixo();
             }}
           />
 
@@ -536,7 +585,7 @@ export default function CadastroScreen() {
                   true
                 );
 
-                rolarParaBaixo();
+                acompanharCampo(175);
               }}
               onBlur={() => {
                 setSenhaFocada(
@@ -545,8 +594,6 @@ export default function CadastroScreen() {
               }}
               onSubmitEditing={() => {
                 repetirSenhaRef.current?.focus();
-
-                rolarParaBaixo();
               }}
             />
 
@@ -630,7 +677,7 @@ export default function CadastroScreen() {
                   true
                 );
 
-                rolarParaBaixo();
+                acompanharCampo(240);
               }}
               onBlur={() => {
                 setRepetirSenhaFocada(
@@ -736,6 +783,10 @@ const styles =
       paddingHorizontal: 24,
       paddingTop: 14,
       paddingBottom: 40,
+    },
+
+    contentTeclado: {
+      paddingBottom: 70,
     },
 
     voltarButton: {

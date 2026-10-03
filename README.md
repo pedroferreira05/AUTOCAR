@@ -4,7 +4,7 @@ Aplicativo para controle de estoque, atendimentos e financeiro de uma estética 
 
 ## Organização
 
-- `aplicativo`: telas e funções do aplicativo.
+- `AutoStock`: telas e funções do aplicativo.
 - `backend`: API e conexão com o PostgreSQL.
 
 ## Como iniciar o backend
@@ -20,7 +20,7 @@ Antes de iniciar, copie `.env.example` para `.env` e configure os dados do Postg
 ## Como iniciar o aplicativo
 
 ```powershell
-cd aplicativo
+cd AutoStock
 npm.cmd install
 npx.cmd expo start -c
 ```

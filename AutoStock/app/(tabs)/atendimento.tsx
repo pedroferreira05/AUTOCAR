@@ -4,11 +4,12 @@ import {
 } from 'react';
 
 import {
+  ActivityIndicator,
   Alert,
+  FlatList,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -88,6 +89,11 @@ export default function AtendimentoScreen() {
     setValor,
   ] = useState('');
 
+  const [
+    salvando,
+    setSalvando,
+  ] = useState(false);
+
   /*
     Referências dos campos.
 
@@ -131,7 +137,7 @@ export default function AtendimentoScreen() {
     );
 
   const scrollRef =
-    useRef<ScrollView>(
+    useRef<FlatList<Atendimento>>(
       null
     );
 
@@ -577,6 +583,10 @@ export default function AtendimentoScreen() {
   }
 
   async function salvarAtendimento() {
+    if (salvando) {
+      return;
+    }
+
     Keyboard.dismiss();
 
     const valorNumero =
@@ -658,9 +668,28 @@ export default function AtendimentoScreen() {
         valorNumero,
     };
 
+    setSalvando(true);
+
     try {
       await adicionarAtendimento(
         novoAtendimento
+      );
+
+      limparFormulario();
+
+      setFiltroHistorico(
+        'todos'
+      );
+
+      setBusca('');
+
+      setAba(
+        'historico'
+      );
+
+      Alert.alert(
+        'AUTOCAR',
+        'Atendimento adicionado.'
       );
     } catch (erro) {
       Alert.alert(
@@ -670,25 +699,9 @@ export default function AtendimentoScreen() {
           : 'Verifique a conexão com o servidor.'
       );
 
-      return;
+    } finally {
+      setSalvando(false);
     }
-
-    limparFormulario();
-
-    setFiltroHistorico(
-      'todos'
-    );
-
-    setBusca('');
-
-    setAba(
-      'historico'
-    );
-
-    Alert.alert(
-      'AUTOCAR',
-      'Atendimento adicionado.'
-    );
   }
 
   function selecionarFiltro(
@@ -721,6 +734,113 @@ export default function AtendimentoScreen() {
     );
   }
 
+  function renderizarAtendimento({
+    item: atendimento,
+  }: {
+    item: Atendimento;
+  }) {
+    return (
+      <View
+        style={
+          styles.atendimentoCard
+        }
+      >
+        <View
+          style={
+            styles.cardTopo
+          }
+        >
+          <View
+            style={
+              styles.clienteArea
+            }
+          >
+            <Text
+              style={
+                styles.cliente
+              }
+            >
+              {
+                atendimento.nome
+              }
+            </Text>
+
+            <Text
+              style={
+                styles.carro
+              }
+            >
+              {
+                atendimento.carro
+              }
+            </Text>
+
+            <Text
+              style={
+                styles.placa
+              }
+            >
+              {
+                atendimento.placa
+              }
+            </Text>
+          </View>
+
+          <Text
+            style={
+              styles.valorHistorico
+            }
+          >
+            R${' '}
+            {
+              formatarValor(
+                obterValorAtendimento(
+                  atendimento
+                )
+              )
+            }
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.divisor
+          }
+        />
+
+        <Text
+          style={
+            styles.detalhe
+          }
+        >
+          {
+            atendimento.servico
+          }
+        </Text>
+
+        <Text
+          style={
+            styles.detalhe
+          }
+        >
+          {
+            atendimento.data
+          }
+        </Text>
+
+        <Text
+          style={
+            styles.detalhe
+          }
+        >
+          {
+            atendimento.horario
+          }
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={
@@ -733,7 +853,7 @@ export default function AtendimentoScreen() {
           : 'height'
       }
     >
-      <ScrollView
+      <FlatList
         ref={scrollRef}
         style={
           styles.container
@@ -746,14 +866,31 @@ export default function AtendimentoScreen() {
         showsVerticalScrollIndicator={
           false
         }
-      >
-        <AppHeader />
+        data={
+          aba === 'historico'
+            ? atendimentosFiltrados
+            : []
+        }
+        keyExtractor={(
+          atendimento
+        ) =>
+          atendimento.id.toString()
+        }
+        renderItem={
+          renderizarAtendimento
+        }
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        ListHeaderComponent={
+          <>
+            <AppHeader />
 
-        <View
-          style={
-            styles.abas
-          }
-        >
+            <View
+              style={
+                styles.abas
+              }
+            >
           <TouchableOpacity
             style={[
               styles.abaButton,
@@ -811,7 +948,7 @@ export default function AtendimentoScreen() {
               Histórico
             </Text>
           </TouchableOpacity>
-        </View>
+            </View>
 
         {aba ===
           'novo' && (
@@ -1080,21 +1217,48 @@ export default function AtendimentoScreen() {
             />
 
             <TouchableOpacity
-              style={
-                styles.button
-              }
+              style={[
+                styles.button,
+
+                salvando &&
+                  styles.buttonDesabilitado,
+              ]}
               onPress={
                 salvarAtendimento
               }
+              disabled={
+                salvando
+              }
               activeOpacity={0.8}
             >
-              <Text
-                style={
-                  styles.buttonText
-                }
-              >
-                SALVAR ATENDIMENTO
-              </Text>
+              {salvando ? (
+                <View
+                  style={
+                    styles.buttonCarregando
+                  }
+                >
+                  <ActivityIndicator
+                    size="small"
+                    color="#FFFFFF"
+                  />
+
+                  <Text
+                    style={
+                      styles.buttonText
+                    }
+                  >
+                    SALVANDO...
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  style={
+                    styles.buttonText
+                  }
+                >
+                  SALVAR ATENDIMENTO
+                </Text>
+              )}
             </TouchableOpacity>
           </>
         )}
@@ -1244,133 +1408,28 @@ export default function AtendimentoScreen() {
               </View>
             )}
 
-            {atendimentosFiltrados.length ===
-            0 ? (
-              <View
-                style={
-                  styles.vazio
-                }
-              >
-                <Text
-                  style={
-                    styles.vazioTitulo
-                  }
-                >
-                  Nenhum atendimento
-                </Text>
-              </View>
-            ) : (
-              atendimentosFiltrados.map(
-                (
-                  atendimento
-                ) => (
-                  <View
-                    key={
-                      atendimento.id
-                    }
-                    style={
-                      styles.atendimentoCard
-                    }
-                  >
-                    <View
-                      style={
-                        styles.cardTopo
-                      }
-                    >
-                      <View
-                        style={
-                          styles.clienteArea
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.cliente
-                          }
-                        >
-                          {
-                            atendimento.nome
-                          }
-                        </Text>
-
-                        <Text
-                          style={
-                            styles.carro
-                          }
-                        >
-                          {
-                            atendimento.carro
-                          }
-                        </Text>
-
-                        <Text
-                          style={
-                            styles.placa
-                          }
-                        >
-                          {
-                            atendimento.placa
-                          }
-                        </Text>
-                      </View>
-
-                      <Text
-                        style={
-                          styles.valorHistorico
-                        }
-                      >
-                        R${' '}
-                        {
-                          formatarValor(
-                            obterValorAtendimento(
-                              atendimento
-                            )
-                          )
-                        }
-                      </Text>
-                    </View>
-
-                    <View
-                      style={
-                        styles.divisor
-                      }
-                    />
-
-                    <Text
-                      style={
-                        styles.detalhe
-                      }
-                    >
-                      {
-                        atendimento.servico
-                      }
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.detalhe
-                      }
-                    >
-                      {
-                        atendimento.data
-                      }
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.detalhe
-                      }
-                    >
-                      {
-                        atendimento.horario
-                      }
-                    </Text>
-                  </View>
-                )
-              )
-            )}
           </>
         )}
-      </ScrollView>
+          </>
+        }
+        ListEmptyComponent={
+          aba === 'historico' ? (
+            <View
+              style={
+                styles.vazio
+              }
+            >
+              <Text
+                style={
+                  styles.vazioTitulo
+                }
+              >
+                Nenhum atendimento
+              </Text>
+            </View>
+          ) : null
+        }
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -1489,6 +1548,23 @@ const styles =
         'center',
 
       marginTop: 30,
+    },
+
+    buttonDesabilitado: {
+      opacity: 0.7,
+    },
+
+    buttonCarregando: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      gap: 10,
     },
 
     buttonText: {
